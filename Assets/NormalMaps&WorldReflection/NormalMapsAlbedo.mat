@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: NormalPlay
-  m_Shader: {fileID: 4800000, guid: 68de4408aabaa1848a76e3b4e2585f73, type: 3}
+  m_Name: NormalMapsAlbedo
+  m_Shader: {fileID: 4800000, guid: 794159f10a5a3774097455f81f799694, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -77,9 +77,6 @@ Material:
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
-    - _myX: -0.3
-    - _myY: 1
-    - _myZ: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
