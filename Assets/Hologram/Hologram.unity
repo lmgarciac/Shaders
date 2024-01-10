@@ -877,6 +877,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 571254405685532701, guid: a82f70a5f0178974093910fc6fd84c38, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: aec32802f91f08646953ba64eea117ff, type: 2}
+    - target: {fileID: 582172356403571875, guid: a82f70a5f0178974093910fc6fd84c38, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: aec32802f91f08646953ba64eea117ff, type: 2}
+    - target: {fileID: 2143715578655647269, guid: a82f70a5f0178974093910fc6fd84c38, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: aec32802f91f08646953ba64eea117ff, type: 2}
+    - target: {fileID: 4872312717156371487, guid: a82f70a5f0178974093910fc6fd84c38, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: aec32802f91f08646953ba64eea117ff, type: 2}
     - target: {fileID: 6183048251904429594, guid: a82f70a5f0178974093910fc6fd84c38, type: 3}
       propertyPath: m_Name
       value: Free Racing Car Red Variant
@@ -921,6 +937,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7937709886171695801, guid: a82f70a5f0178974093910fc6fd84c38, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: aec32802f91f08646953ba64eea117ff, type: 2}
+    - target: {fileID: 8836965260061033581, guid: a82f70a5f0178974093910fc6fd84c38, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: aec32802f91f08646953ba64eea117ff, type: 2}
+    - target: {fileID: 8836965260061033581, guid: a82f70a5f0178974093910fc6fd84c38, type: 3}
+      propertyPath: m_Materials.Array.data[1]
+      value: 
+      objectReference: {fileID: 2100000, guid: aec32802f91f08646953ba64eea117ff, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
