@@ -23,7 +23,7 @@ Shader "Holistic/VFDiffuseShadow"
             {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
-                float2 texcoord : TEXCOORD0;
+                float4 texcoord : TEXCOORD0;
             };
 
             struct v2f
@@ -33,9 +33,6 @@ Shader "Holistic/VFDiffuseShadow"
                 float4 pos : SV_POSITION; //We change to "pos" because TRANSFER_SHADOW(o) function is looking for the "pos" name.
                 SHADOW_COORDS(1)
             };
-
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
 
             v2f vert (appdata v)
             {
@@ -49,6 +46,9 @@ Shader "Holistic/VFDiffuseShadow"
 
                 return o;
             }
+
+            sampler2D _MainTex;
+
 
             fixed4 frag (v2f i) : SV_Target
             {
@@ -74,13 +74,13 @@ Shader "Holistic/VFDiffuseShadow"
             {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
-                float2 texcoord : TEXCOORD0;
+                float4 texcoord : TEXCOORD0;
             };
 
             struct v2f 
             {
                 V2F_SHADOW_CASTER;
-            }
+            };
 
             v2f vert (appdata v)
             {
