@@ -10,7 +10,7 @@ Shader "Holistic/UVScroll"
     SubShader
     {
         CGPROGRAM
-        #pragma surface surf Standard fullforwardshadows
+        #pragma surface surf Lambert
 
         sampler2D _MainTex;
         sampler2D _FoamTex;
@@ -22,7 +22,7 @@ Shader "Holistic/UVScroll"
             float2 uv_MainTex;
         };
 
-        void surf (Input IN, inout SurfaceOutputStandard o)
+        void surf (Input IN, inout SurfaceOutput o)
         {
             _ScrollX *= _Time;
             _ScrollY *= _Time;
