@@ -51,6 +51,50 @@ Shader "Holistic/VolumetricClouds"
             float4 _SunDir;
             sampler2D _CameraDepthTexture;
 
+            float random(float3 value, float3 dotDir)
+            {
+                float3 smallV = sin(value);
+                float random = dot(smallV, dotDir);
+                random = frac(sin(random) * 123574.43212);
+                
+                return random;
+            }
+
+            float3 random3D (float3 value)
+            {
+                return float3 ( random(value, float3(12.898,68.54,37.7298)),
+                                random(value, float3(38.898,26.54,85.7298)),
+                                random(value, float3(76.898,12.54,8.7298)));
+            }
+
+            float noise3d(float3 value)
+            {
+                value *= _Scale;
+                float3 interp = frac(value);
+                interp = smoothstep(0.0, 1.0, interp);
+
+                float3 ZValues[2];
+                for (int z = 0; z <= 1; z++)
+                {
+                    float3 YValues[2];
+                    for (int y = 0; y <= 1; y++)
+                    {
+                        float3 XValues[2];
+                        for (int x = 0; x <= 1; x++)
+                        {
+                            float3 cell = floor (value) + float3(x,y,z);
+                            XValues[x] = random3d(cell);
+                        }
+                        YValues[y] = lerp(XValues[0],XValues[1], interp.x);
+                    }
+                    ZValues[z] = lerp(YValues[0],YValues[1], interp.y);
+                }
+                //float noise = lerp(ZValues[0],ZValues[1],interp.z);
+                float noise =-1.0 + 2.0 * lerp(ZValues[0],ZValues[1],interp.z); //add -1 and muliply by 2 to push the values apart a bit more
+
+                return noise;
+            }
+
             #define MARCH(steps, noiseMap, cameraPos, viewDir, bgcol, sum, depth, t) { \
                 for (int i = 0; i < steps  + 1; i++) \
                 { \
