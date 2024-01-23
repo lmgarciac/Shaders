@@ -1,0 +1,38 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Drive : MonoBehaviour
+{
+    public float speed = 10.0f;
+    public float rotationSpeed = 100.0f;
+
+    void Update()
+    {
+        // Get the horizontal and vertical axis.
+        // By default they are mapped to the arrow keys.
+        // The value is in the range -1 to 1
+        Vector3 translationVert = Vector3.forward * Input.GetAxis("Vertical") * speed;
+        Vector3 translationHor = Vector3.left * Input.GetAxis("Horizontal") * speed;
+
+        float rotation = Input.GetAxis("Mouse X") * rotationSpeed;
+        float pitch = Input.GetAxis("Mouse Y") * rotationSpeed;
+
+        // Make it move 10 meters per second instead of 10 meters per frame...
+        translationVert *= Time.deltaTime;
+        translationHor *= Time.deltaTime;
+
+        rotation *= Time.deltaTime;
+        pitch *= Time.deltaTime;
+
+
+        // Move translation along the object's z-axis
+        transform.Translate(translationHor + translationVert);
+
+        // Rotate around our y-axis
+        transform.Rotate(Vector3.up, rotation);
+
+        // Pitch
+        transform.Rotate(Vector3.left, pitch);
+    }
+}
