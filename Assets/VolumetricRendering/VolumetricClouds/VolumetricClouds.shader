@@ -6,7 +6,7 @@ Shader "Holistic/VolumetricClouds"
         _StepScale ("Step Scale", Range(0.1,100.0)) = 1.0
         _Steps ("Number of Steps", Range(1,200)) = 60
         _MinHeight ("Min Height", Range(0,5)) = 0
-        _MaxHeight ("Max Height", Range(6.0,10.0)) = 10
+        _MaxHeight ("Max Height", Range(6.0,100.0)) = 10
         _FadeDist ("Fade Distance", Range(0.0,10.0)) = 0.5
         _SunDir ("Sun Direction", Vector) = (1,0,0,0)       
     }
@@ -60,16 +60,20 @@ Shader "Holistic/VolumetricClouds"
                 return random;
             }
 
-            float3 random3D (float3 value)
+            float3 random3d (float3 value)
             {
                 return float3 ( random(value, float3(12.898,68.54,37.7298)),
                                 random(value, float3(38.898,26.54,85.7298)),
-                                random(value, float3(76.898,12.54,8.7298)));
+                                random(value, float3(76.898,12.54,8.7298))
+                              );
             }
 
             float noise3d(float3 value)
             {
                 value *= _Scale;
+
+                value.x += _Time.x * 5; //For static clouds don't use this line
+
                 float3 interp = frac(value);
                 interp = smoothstep(0.0, 1.0, interp);
 
@@ -93,6 +97,23 @@ Shader "Holistic/VolumetricClouds"
                 float noise =-1.0 + 2.0 * lerp(ZValues[0],ZValues[1],interp.z); //add -1 and muliply by 2 to push the values apart a bit more
 
                 return noise;
+            }
+
+            fixed4 integrate (fixed4 sum, float diffuse, float density, fixed4 bgcol, float t)
+            {
+                fixed3 lighting = fixed3 (0.65,0.68,0.7) * 1.3 + 0.5 * fixed3 (0.7,0.5,0.3) * diffuse;
+                
+                //You can make light red
+                //fixed3 lighting = fixed3 (1,0,0) * 1.3 + 0.5 * fixed3 (0.7,0.5,0.3) * diffuse;
+                
+                fixed3 colrgb = lerp(fixed3(1.0,0.95,0.8), fixed3(0.65,0.65,0.65), density);
+                fixed4 col = fixed4 (colrgb.r,colrgb.g,colrgb.b,density);
+                col.rgb *= lighting;
+                col.rgb = lerp(col.rgb, bgcol, 1.0 - exp(-0.003*t*t));
+                col.a *= 0.5;
+                col.rgb *= col.a;
+
+                return sum + col*(1.0-sum.a);
             }
 
             #define MARCH(steps, noiseMap, cameraPos, viewDir, bgcol, sum, depth, t) { \
@@ -121,11 +142,96 @@ Shader "Holistic/VolumetricClouds"
 
             #define NOISEPROC(N, P) 1.75 * N * saturate((_MaxHeight - P.y)/_FadeDist)
 
+            float map5 (float3 q) //We can copy map1 function and even do a different one
+            {
+                float3 p = q;
+                float f; //Accumulation of noise (consider it a frequency)
+                f = 0.5 * noise3d(q);
+
+                q = q * 2;
+                f += 0.25 * noise3d(q); // We can acumulate the values of f
+
+                q = q * 3;
+                f += 0.125 * noise3d(q); // We can acumulate the values of f
+
+                q = q * 4;
+                f += 0.0625 * noise3d(q); // We can acumulate the values of f
+
+                q = q * 5;
+                f += 0.03125 * noise3d(q); // We can acumulate the values of f
+
+                //try leaving NOISEPROC out and returning just f to see the effect.
+                return NOISEPROC(f, p);
+            }
+
+            float map4 (float3 q) //We can copy map1 function and even do a different one
+            {
+                float3 p = q;
+                float f; //Accumulation of noise (consider it a frequency)
+                f = 0.5 * noise3d(q);
+
+                q = q * 2;
+                f += 0.25 * noise3d(q); // We can acumulate the values of f
+
+                q = q * 3;
+                f += 0.125 * noise3d(q); // We can acumulate the values of f
+
+                q = q * 4;
+                f += 0.0625 * noise3d(q); // We can acumulate the values of f
+
+                q = q * 5;
+                f += 0.03125 * noise3d(q); // We can acumulate the values of f
+
+                q = q * 6;
+                f += 0.015625 * noise3d(q); // We can acumulate the values of f
+                
+                //try leaving NOISEPROC out and returning just f to see the effect.
+                return NOISEPROC(f, p);
+            }
+
+            float map3 (float3 q) //We can copy map1 function and even do a different one
+            {
+                float3 p = q;
+                float f; //Accumulation of noise (consider it a frequency)
+                f = 0.5 * noise3d(q);
+
+                q = q * 2;
+                f += 0.25 * noise3d(q); // We can acumulate the values of f
+
+                q = q * 3;
+                f += 0.125 * noise3d(q); // We can acumulate the values of f
+
+                q = q * 4;
+                f += 0.0625 * noise3d(q); // We can acumulate the values of f
+
+                //try leaving NOISEPROC out and returning just f to see the effect.
+                return NOISEPROC(f, p);
+            }
+
+            float map2 (float3 q) //We can copy map1 function and even do a different one
+            {
+                float3 p = q;
+                float f; //Accumulation of noise (consider it a frequency)
+                f = 0.5 * noise3d(q);
+
+                q = q * 2;
+                f += 0.25 * noise3d(q); // We can acumulate the values of f
+
+                q = q * 3;
+                f += 0.125 * noise3d(q); // We can acumulate the values of f
+
+                //try leaving NOISEPROC out and returning just f to see the effect.
+                return NOISEPROC(f, p);
+            }
+
             float map1 (float3 q)
             {
                 float3 p = q;
                 float f; //Accumulation of noise (consider it a frequency)
                 f = 0.5 * noise3d(q);
+
+                q = q * 2;
+                f += 0.25 * noise3d(q); // We can acumulate the values of f
                 //try leaving NOISEPROC out and returning just f to see the effect.
                 return NOISEPROC(f, p);
             }
@@ -135,7 +241,11 @@ Shader "Holistic/VolumetricClouds"
                 fixed4 col = fixed4(0,0,0,0);
                 float ct = 0; //number of acumulated steps already done
 
-                MARCH(_Steps, map1, cameraPos, viewDir, bgcolor, col, depth, ct)
+                MARCH(_Steps, map1, cameraPos, viewDir, bgcolor, col, depth, ct) //col comes out automatically through the macro                
+                MARCH(_Steps, map2, cameraPos, viewDir, bgcolor, col, depth * 2, ct) //you can other macro steps using different maps
+                MARCH(_Steps, map3, cameraPos, viewDir, bgcolor, col, depth * 3, ct) //you can other macro steps using different maps
+                MARCH(_Steps, map4, cameraPos, viewDir, bgcolor, col, depth * 4, ct) //you can other macro steps using different maps
+                MARCH(_Steps, map5, cameraPos, viewDir, bgcolor, col, depth * 5, ct) //you can other macro steps using different maps
 
                 return clamp(col, 0.0, 1.0);
             }
@@ -152,7 +262,7 @@ Shader "Holistic/VolumetricClouds"
             }
 
             fixed4 frag (v2f i) : SV_Target
-            {
+            {               
                 float depth = 1;
                 depth *= length(i.view);
                 fixed4 col = fixed4(1,1,1,0);
