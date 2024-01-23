@@ -2,22 +2,12 @@ Shader "Holistic/VolumetricCloudsCamera"
 {
     Properties
     {
-        _Scale ("Scale", Range(0.1,10.0)) = 2.0
-        _StepScale ("Step Scale", Range(0.1,100.0)) = 1.0
-        _Steps ("Number of Steps", Range(1,200)) = 60
-        _MinHeight ("Min Height", Range(0,5)) = 0
-        _MaxHeight ("Max Height", Range(6.0,100.0)) = 10
-        _FadeDist ("Fade Distance", Range(0.0,10.0)) = 0.5
-        _SunDir ("Sun Direction", Vector) = (1,0,0,0)       
+        _MainTex ("", 2D) = "white" {}  
     }
 
     SubShader
     {
-        Tags { "Queue"="Transparent" }
-
-        Blend SrcAlpha OneMinusSrcAlpha
-        Cull Off Lighting Off ZWrite Off
-        ZTest Always //Allow to put objects within the fog
+        ZTest Always Cull Off ZWrite Off
 
         Pass
         {
@@ -27,19 +17,11 @@ Shader "Holistic/VolumetricCloudsCamera"
 
             #include "UnityCG.cginc"
 
-            struct appdata
-            {
-                float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
-            };
-
             struct v2f
             {                
                 float4 pos : SV_POSITION;
-                //float2 uv : TEXCOORD0;
+                float2 uv : TEXCOORD0;
                 float3 view : TEXCOORD1;
-                float4 projPos : TEXCOORD2;
-                float3 wpos : TEXCOORD3;
             };
 
             float _MinHeight;
@@ -51,53 +33,13 @@ Shader "Holistic/VolumetricCloudsCamera"
             float4 _SunDir;
             sampler2D _CameraDepthTexture;
 
-            float random(float3 value, float3 dotDir)
-            {
-                float3 smallV = sin(value);
-                float random = dot(smallV, dotDir);
-                random = frac(sin(random) * 123574.43212);
-                
-                return random;
-            }
+            sampler2D _MainTex;
+            float4 _MainTex_TexelSize;
+            sampler2D _ValueNoise;
 
-            float3 random3d (float3 value)
-            {
-                return float3 ( random(value, float3(12.898,68.54,37.7298)),
-                                random(value, float3(38.898,26.54,85.7298)),
-                                random(value, float3(76.898,12.54,8.7298))
-                              );
-            }
-
-            float noise3d(float3 value)
-            {
-                value *= _Scale;
-
-                value.x += _Time.x * 5; //For static clouds don't use this line
-
-                float3 interp = frac(value);
-                interp = smoothstep(0.0, 1.0, interp);
-
-                float3 ZValues[2];
-                for (int z = 0; z <= 1; z++)
-                {
-                    float3 YValues[2];
-                    for (int y = 0; y <= 1; y++)
-                    {
-                        float3 XValues[2];
-                        for (int x = 0; x <= 1; x++)
-                        {
-                            float3 cell = floor (value) + float3(x,y,z);
-                            XValues[x] = random3d(cell);
-                        }
-                        YValues[y] = lerp(XValues[0],XValues[1], interp.x);
-                    }
-                    ZValues[z] = lerp(YValues[0],YValues[1], interp.y);
-                }
-                //float noise = lerp(ZValues[0],ZValues[1],interp.z);
-                float noise =-1.0 + 2.0 * lerp(ZValues[0],ZValues[1],interp.z); //add -1 and muliply by 2 to push the values apart a bit more
-
-                return noise;
-            }
+            float4x4 _FrustumCornersWS;
+            float4 _CameraPosWS;
+            float4x4 _CameraInvViewMatrix;
 
             fixed4 integrate (fixed4 sum, float diffuse, float density, fixed4 bgcol, float t)
             {
@@ -142,23 +84,35 @@ Shader "Holistic/VolumetricCloudsCamera"
 
             #define NOISEPROC(N, P) 1.75 * N * saturate((_MaxHeight - P.y)/_FadeDist)
 
+            float NoiseFromImage(float3 x)
+            {
+                x *= _Scale;
+                float3 p = floor(x);
+                float3 f = frac(x);
+                f = smoothstep(0,1,f);
+
+                float2 uv = (p.xy + float2(37.0,-17.0) * p.z + f.xy);
+                float2 rg = tex2Dlod(_ValueNoise, float4(uv/256,0,0)).rg;
+                return -1.0 + 2.0 * lerp(rg.g, rg.r, f.z);
+            }
+
             float map5 (float3 q) //We can copy map1 function and even do a different one
             {
                 float3 p = q;
                 float f; //Accumulation of noise (consider it a frequency)
-                f = 0.5 * noise3d(q);
+                f = 0.5 * NoiseFromImage(q);
 
                 q = q * 2;
-                f += 0.25 * noise3d(q); // We can acumulate the values of f
+                f += 0.25 * NoiseFromImage(q); // We can acumulate the values of f
 
                 q = q * 3;
-                f += 0.125 * noise3d(q); // We can acumulate the values of f
+                f += 0.125 * NoiseFromImage(q); // We can acumulate the values of f
 
                 q = q * 4;
-                f += 0.0625 * noise3d(q); // We can acumulate the values of f
+                f += 0.0625 * NoiseFromImage(q); // We can acumulate the values of f
 
                 q = q * 5;
-                f += 0.03125 * noise3d(q); // We can acumulate the values of f
+                f += 0.03125 * NoiseFromImage(q); // We can acumulate the values of f
 
                 //try leaving NOISEPROC out and returning just f to see the effect.
                 return NOISEPROC(f, p);
@@ -168,22 +122,22 @@ Shader "Holistic/VolumetricCloudsCamera"
             {
                 float3 p = q;
                 float f; //Accumulation of noise (consider it a frequency)
-                f = 0.5 * noise3d(q);
+                f = 0.5 * NoiseFromImage(q);
 
                 q = q * 2;
-                f += 0.25 * noise3d(q); // We can acumulate the values of f
+                f += 0.25 * NoiseFromImage(q); // We can acumulate the values of f
 
                 q = q * 3;
-                f += 0.125 * noise3d(q); // We can acumulate the values of f
+                f += 0.125 * NoiseFromImage(q); // We can acumulate the values of f
 
                 q = q * 4;
-                f += 0.0625 * noise3d(q); // We can acumulate the values of f
+                f += 0.0625 * NoiseFromImage(q); // We can acumulate the values of f
 
                 q = q * 5;
-                f += 0.03125 * noise3d(q); // We can acumulate the values of f
+                f += 0.03125 * NoiseFromImage(q); // We can acumulate the values of f
 
                 q = q * 6;
-                f += 0.015625 * noise3d(q); // We can acumulate the values of f
+                f += 0.015625 * NoiseFromImage(q); // We can acumulate the values of f
                 
                 //try leaving NOISEPROC out and returning just f to see the effect.
                 return NOISEPROC(f, p);
@@ -193,16 +147,16 @@ Shader "Holistic/VolumetricCloudsCamera"
             {
                 float3 p = q;
                 float f; //Accumulation of noise (consider it a frequency)
-                f = 0.5 * noise3d(q);
+                f = 0.5 * NoiseFromImage(q);
 
                 q = q * 2;
-                f += 0.25 * noise3d(q); // We can acumulate the values of f
+                f += 0.25 * NoiseFromImage(q); // We can acumulate the values of f
 
                 q = q * 3;
-                f += 0.125 * noise3d(q); // We can acumulate the values of f
+                f += 0.125 * NoiseFromImage(q); // We can acumulate the values of f
 
                 q = q * 4;
-                f += 0.0625 * noise3d(q); // We can acumulate the values of f
+                f += 0.0625 * NoiseFromImage(q); // We can acumulate the values of f
 
                 //try leaving NOISEPROC out and returning just f to see the effect.
                 return NOISEPROC(f, p);
@@ -212,13 +166,13 @@ Shader "Holistic/VolumetricCloudsCamera"
             {
                 float3 p = q;
                 float f; //Accumulation of noise (consider it a frequency)
-                f = 0.5 * noise3d(q);
+                f = 0.5 * NoiseFromImage(q);
 
                 q = q * 2;
-                f += 0.25 * noise3d(q); // We can acumulate the values of f
+                f += 0.25 * NoiseFromImage(q); // We can acumulate the values of f
 
                 q = q * 3;
-                f += 0.125 * noise3d(q); // We can acumulate the values of f
+                f += 0.125 * NoiseFromImage(q); // We can acumulate the values of f
 
                 //try leaving NOISEPROC out and returning just f to see the effect.
                 return NOISEPROC(f, p);
@@ -228,10 +182,10 @@ Shader "Holistic/VolumetricCloudsCamera"
             {
                 float3 p = q;
                 float f; //Accumulation of noise (consider it a frequency)
-                f = 0.5 * noise3d(q);
+                f = 0.5 * NoiseFromImage(q);
 
                 q = q * 2;
-                f += 0.25 * noise3d(q); // We can acumulate the values of f
+                f += 0.25 * NoiseFromImage(q); // We can acumulate the values of f
                 //try leaving NOISEPROC out and returning just f to see the effect.
                 return NOISEPROC(f, p);
             }
@@ -250,26 +204,44 @@ Shader "Holistic/VolumetricCloudsCamera"
                 return clamp(col, 0.0, 1.0);
             }
 
-            v2f vert (appdata v)
+            v2f vert (appdata_img v)
             {
                 v2f o;
-                o.wpos = mul(unity_ObjectToWorld,v.vertex).xyz;
+                
+                half index = v.vertex.z;
+                v.vertex.z = 0.1; //Move it just behind the cameraPos
                 o.pos = UnityObjectToClipPos(v.vertex);
-                o.view = o.wpos - _WorldSpaceCameraPos;
-                o.projPos = ComputeScreenPos(o.pos);
+                o.uv = v.texcoord.xy;
+
+                #if UNITY_UV_START_AT_TOP
+                    if (_MainTexSize.y < 0)
+                        o.uv.y = 1 - o.uv.y; //Turn the camera around
+                #endif
+
+                o.view = _FrustumCornersWS[(int)index];
+                o.view /= abs(o.view.z);
+                o.view = mul(_CameraInvViewMatrix, o.view); //Changing the view direction into the space of the camera itself
 
                 return o;
             }
 
             fixed4 frag (v2f i) : SV_Target
-            {               
-                float depth = 1;
-                depth *= length(i.view);
-                fixed4 col = fixed4(1,1,1,0);
-                fixed4 clouds = raymarch(_WorldSpaceCameraPos, normalize(i.view) * _StepScale, col, depth);
-                fixed3 mixedCol = col * (1.0 - clouds.a) + clouds.rgb;
+            {
+                float3 start = _CameraPosWS;
+                float2 duv = i.uv;
 
-                return fixed4(mixedCol,clouds.a);
+                #if UNITY_UV_START_AT_TOP
+                    if (_MainTexSize.y < 0)
+                        duv.y = 1 - duv.y; //Turn the camera around
+                #endif
+
+                float depth = LinearEyeDepth(tex2D(_CameraDepthTexture, duv).r);
+                depth *= length(normalize(i.view));
+
+                fixed4 col = tex2D(_MainTex, i.uv);
+                fixed4 sum = raymarch(start, normalize(i.view), col, depth);
+
+                return fixed4(col * (1.0 - sum.a) + sum.rgb, 1.0);
             }
             ENDCG
         }

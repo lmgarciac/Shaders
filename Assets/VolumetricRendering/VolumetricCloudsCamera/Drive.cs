@@ -13,7 +13,7 @@ public class Drive : MonoBehaviour
         // By default they are mapped to the arrow keys.
         // The value is in the range -1 to 1
         Vector3 translationVert = Vector3.forward * Input.GetAxis("Vertical") * speed;
-        Vector3 translationHor = Vector3.left * Input.GetAxis("Horizontal") * speed;
+        Vector3 translationHor = Vector3.right * Input.GetAxis("Horizontal") * speed;
 
         float rotation = Input.GetAxis("Mouse X") * rotationSpeed;
         float pitch = Input.GetAxis("Mouse Y") * rotationSpeed;
