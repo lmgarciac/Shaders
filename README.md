@@ -2,6 +2,12 @@
 
 Este repositorio reúne el material estudiado y los ejercicios realizados durante un curso de shaders en Unity. Incluye ejemplos prácticos, experimentación personal y versiones incrementales de cada shader a medida que se incorporan nuevos conceptos. El objetivo no es solo replicar el contenido del curso, sino documentar el aprendizaje, crear una base de referencia técnica y dejar un registro del progreso en iluminación, efectos gráficos, vertex/fragment shaders y técnicas más avanzadas como blending, PBR y volumetric rendering.
 
+<img width="1294" height="816" alt="image" src="https://github.com/user-attachments/assets/1ca33fef-01ca-4f63-9f91-b149d2372a61" />
+
+<img width="1294" height="816" alt="image" src="https://github.com/user-attachments/assets/54d69aec-f02a-4d64-99ea-94ceda7efb21" />
+
+<img width="1294" height="816" alt="image" src="https://github.com/user-attachments/assets/ac4889f7-04b8-4cca-ba58-112b05579641" />
+
 A continuación, una lista de los temas que se tocaron y que se encontrarán en distintos ejemplos en el repositorio.
 
 ---
